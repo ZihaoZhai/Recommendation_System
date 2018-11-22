@@ -1,40 +1,36 @@
 import collections
 from datetime import datetime
+from random import random
 
-def customerResolution(data):
-	num=0
-	start=datetime.now()
-	userNum=-1
-	while userNum!=len(data.keys()):
-		userNum=len(data.keys())
-		keys=data.keys()
-		for c in keys:
-			for k in data:
-				if c!=k and (data[c]['email']&data[k]['email'] or data[c]['telephone']&data[k]['telephone']):
-					data[k]['email']=data[k]['email']|data[c]['email']
-					data[k]['telephone']=data[k]['telephone']|data[c]['telephone']
-					data[k]['configurable_sku']=data[k]['configurable_sku']|data[c]['configurable_sku']
-					del data[c]
-					break
-			num+=1
-			if num%2000==0:
-				print 'customer resolution:',num,datetime.now()-start
-		break
-	return [data[k] for k in data]
-
-def phoneNumberCleaner(s):
-	data=[]
-	for c in s:
-		if c.isdigit():
-			data.append(c)
-	data=''.join(data)
-	if 10<=len(data)<=12:
-		return data[-10:]
-	if len(data)==13:
-		return data[-11:]
-	return None
+def getDataInfor(dataSet):
+	print 'tarinning set size:',len(dataSet['train'])
+	for i in xrange(len(dataSet['test'])):
+		print 'testing set '+str(i+1)+' :',len(dataSet['test'][i])
 
 def aggregateByCustomer(data_obj_list):
+
+	def customerResolution(data):
+		num=0
+		start=datetime.now()
+		userNum=-1
+		while userNum!=len(data.keys()):
+			userNum=len(data.keys())
+			keys=data.keys()
+			total=len(keys)
+			for c in keys:
+				for k in data:
+					if c!=k and (data[c]['email']&data[k]['email'] or data[c]['telephone']&data[k]['telephone']):
+						data[k]['email']=data[k]['email']|data[c]['email']
+						data[k]['telephone']=data[k]['telephone']|data[c]['telephone']
+						data[k]['configurable_sku']=data[k]['configurable_sku']|data[c]['configurable_sku']
+						del data[c]
+						break
+				num+=1
+				if num%2000==0:
+					print 'customer resolution:',str(int(num/float(total)*100))+'%',datetime.now()-start
+			break
+		return [data[k] for k in data]
+
 	data={}
 	incremntalId=0
 	for obj in data_obj_list:
@@ -56,8 +52,7 @@ def aggregateByCustomer(data_obj_list):
 			singleUser.append(data[k])
 			del data[k]
 	data=singleUser+customerResolution(data)
-	print 'userNum',len(data)
-	return [obj['configurable_sku'] for obj in data if len(data['configurable_sku']>1)]
+	return [list(obj['configurable_sku']) for obj in data if len(obj['configurable_sku'])>1]
 
 def aggregateByOrder(data_obj_list):
 	data=collections.defaultdict(set)
@@ -65,16 +60,49 @@ def aggregateByOrder(data_obj_list):
 		order=obj['order_id']
 		item=obj['configurable_sku']
 		data[order].add(item)
-	return [data[k] for k in data if len(data[k])>1]
+	return [list(data[k]) for k in data if len(data[k])>1]
 
-def readCleanData(filePath,method):
-	source_data=open(filePath,'r').read().decode("utf-16").split('\n')
+def readCleanData(env):
+
+	def phoneNumberCleaner(s):
+		data=[]
+		for c in s:
+			if c.isdigit():
+				data.append(c)
+		data=''.join(data)
+		if 10<=len(data)<=12:
+			return data[-10:]
+		if len(data)==13:
+			return data[-11:]
+		return None
+
+	def aggregateData(dataSet,env):
+		print 'start aggregating testing set'
+		print 'total number of testing set:',len(dataSet['test'])
+		for i in xrange(len(dataSet['test'])):
+			print 'start aggregating testing set '+str(i+1)
+			if env['aggregateMethod']=='cus':
+				dataSet['test'][i]=aggregateByCustomer(dataSet['test'][i])
+			elif env['aggregateMethod']=='ord':
+				dataSet['test'][i]=aggregateByOrder(dataSet['test'][i])
+		print 'start aggregating training set'
+		if env['aggregateMethod']=='cus':
+			dataSet['train']=aggregateByCustomer(dataSet['train'])
+		elif env['aggregateMethod']=='ord':
+			dataSet['train']=aggregateByOrder(dataSet['train'])
+		getDataInfor(dataSet)
+		return dataSet
+
+	source_data=open(env['dataFilesPath']+env['dataFileName']['soureInputData'],'r').read().decode("utf-16").split('\n')
 	header=source_data.pop(0).split('\t')
 	source_data.pop()
 	key_mapping={}
 	for i in xrange(len(header)):
 		key_mapping[i]=header[i]
-	data_obj_list=[]
+	dataSet={
+		"train":[],
+		"test":[[] for i in xrange(env['testSetNum'])]
+	}
 	for d in source_data:
 		d=d.split('\t')
 		obj={}
@@ -85,9 +113,11 @@ def readCleanData(filePath,method):
 		obj['telephone']=phoneNumberCleaner(obj['telephone'])
 		obj['email']=None if len(obj['email'])<=10 else obj['email']
 		obj['email']=obj['registered_email'] if len(obj['registered_email'])>10 else obj['email']
-		data_obj_list.append(obj)
-	print 'start aggregate data'
-	if method=='cus':
-		return aggregateByCustomer(data_obj_list)
-	if method=='ord':
-		return aggregateByOrder(data_obj_list)
+		singleTestRate=env["testSetRate"]/float(env["testSetNum"])
+		ti=int(random()/singleTestRate)
+		if ti<env["testSetNum"]:
+			dataSet['test'][ti].append(obj)
+		else:
+			dataSet['train'].append(obj)
+	del source_data
+	return aggregateData(dataSet,env)
