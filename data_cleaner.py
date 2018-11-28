@@ -1,6 +1,8 @@
 import collections
 from datetime import datetime
 from random import random
+import os
+import json
 
 def getDataInfor(dataSet):
 	print 'tarinning set size:',len(dataSet['train'])
@@ -52,7 +54,7 @@ def aggregateByCustomer(data_obj_list):
 			singleUser.append(data[k])
 			del data[k]
 	data=singleUser+customerResolution(data)
-	return [list(obj['configurable_sku']) for obj in data if len(obj['configurable_sku'])>1]
+	return [sorted(list(obj['configurable_sku'])) for obj in data if len(obj['configurable_sku'])>1]
 
 def aggregateByOrder(data_obj_list):
 	data=collections.defaultdict(set)
@@ -60,7 +62,7 @@ def aggregateByOrder(data_obj_list):
 		order=obj['order_id']
 		item=obj['configurable_sku']
 		data[order].add(item)
-	return [list(data[k]) for k in data if len(data[k])>1]
+	return [sorted(list(data[k])) for k in data if len(data[k])>1]
 
 def readCleanData(env):
 
@@ -76,22 +78,7 @@ def readCleanData(env):
 			return data[-11:]
 		return None
 
-	def aggregateData(dataSet,env):
-		print 'start aggregating testing set'
-		print 'total number of testing set:',len(dataSet['test'])
-		for i in xrange(len(dataSet['test'])):
-			print 'start aggregating testing set '+str(i+1)
-			if env['aggregateMethod']=='cus':
-				dataSet['test'][i]=aggregateByCustomer(dataSet['test'][i])
-			elif env['aggregateMethod']=='ord':
-				dataSet['test'][i]=aggregateByOrder(dataSet['test'][i])
-		print 'start aggregating training set'
-		if env['aggregateMethod']=='cus':
-			dataSet['train']=aggregateByCustomer(dataSet['train'])
-		elif env['aggregateMethod']=='ord':
-			dataSet['train']=aggregateByOrder(dataSet['train'])
-		getDataInfor(dataSet)
-		return dataSet
+		
 
 	source_data=open(env['dataFilesPath']+env['dataFileName']['soureInputData'],'r').read().decode("utf-16").split('\n')
 	header=source_data.pop(0).split('\t')
@@ -120,4 +107,34 @@ def readCleanData(env):
 		else:
 			dataSet['train'].append(obj)
 	del source_data
-	return aggregateData(dataSet,env)
+	print 'start aggregating testing set'
+	print 'total number of testing set:',len(dataSet['test'])
+	if env['aggregateMethod']=='cus':
+		files=os.listdir(env['dataFilesPath'])
+		filePath=env['dataFilesPath']+'userProductMapping.json'
+		if 'userProductMapping.json' in files and (datetime.utcnow()-datetime.fromtimestamp(os.path.getctime(filePath))).total_seconds()<env['updatePeriod']*24*60*60:
+			data=json.loads(open(filePath).read())
+			getDataInfor(data)
+		else:
+			filePath=env['dataFilesPath']+env['dataFileName']['soureInputData']
+			if 'userProductMapping.json' in files and (datetime.utcnow()-datetime.fromtimestamp(os.path.getctime(filePath))).total_seconds()>=env['updatePeriod']*24*60*60:
+				print 'Please update data.csv manually'
+				data=None
+			else:	
+				for i in xrange(len(dataSet['test'])):
+					print 'start aggregating testing set '+str(i+1)
+					dataSet['test'][i]=aggregateByCustomer(dataSet['test'][i])
+				print 'start aggregating training set'
+				dataSet['train']=aggregateByCustomer(dataSet['train'])
+				getDataInfor(dataSet)
+				userProduct=open(env['dataFilesPath']+'userProductMapping.json','w')
+				userProduct.write(json.dumps(dataSet))
+				userProduct.close()
+	elif env['aggregateMethod']=='ord':
+		for i in xrange(len(dataSet['test'])):
+			print 'start aggregating testing set '+str(i+1)
+			dataSet['test'][i]=aggregateByOrder(dataSet['test'][i])
+		print 'start aggregating training set'
+		dataSet['train']=aggregateByOrder(dataSet['train'])
+		getDataInfor(dataSet)
+	return dataSet
