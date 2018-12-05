@@ -113,13 +113,14 @@ def readCleanData(env):
 		files=os.listdir(env['dataFilesPath'])
 		filePath=env['dataFilesPath']+'userProductMapping.json'
 		if 'userProductMapping.json' in files and (datetime.utcnow()-datetime.fromtimestamp(os.path.getctime(filePath))).total_seconds()<env['updatePeriod']*24*60*60:
-			data=json.loads(open(filePath).read())
-			getDataInfor(data)
+			dataSet=json.loads(open(filePath).read())
+			print 'reading existing data'
+			getDataInfor(dataSet)
 		else:
 			filePath=env['dataFilesPath']+env['dataFileName']['soureInputData']
 			if 'userProductMapping.json' in files and (datetime.utcnow()-datetime.fromtimestamp(os.path.getctime(filePath))).total_seconds()>=env['updatePeriod']*24*60*60:
 				print 'Please update data.csv manually'
-				data=None
+				dataSet=None
 			else:	
 				for i in xrange(len(dataSet['test'])):
 					print 'start aggregating testing set '+str(i+1)
