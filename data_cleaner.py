@@ -9,61 +9,6 @@ def getDataInfor(dataSet):
 	for i in xrange(len(dataSet['test'])):
 		print 'testing set '+str(i+1)+' :',len(dataSet['test'][i])
 
-def aggregateByCustomer(data_obj_list):
-
-	def customerResolution(data):
-		num=0
-		start=datetime.now()
-		userNum=-1
-		while userNum!=len(data.keys()):
-			userNum=len(data.keys())
-			keys=data.keys()
-			total=len(keys)
-			for c in keys:
-				for k in data:
-					if c!=k and (data[c]['email']&data[k]['email'] or data[c]['telephone']&data[k]['telephone']):
-						data[k]['email']=data[k]['email']|data[c]['email']
-						data[k]['telephone']=data[k]['telephone']|data[c]['telephone']
-						data[k]['configurable_sku']=data[k]['configurable_sku']|data[c]['configurable_sku']
-						del data[c]
-						break
-				num+=1
-				if num%2000==0:
-					print 'customer resolution:',str(int(num/float(total)*100))+'%',datetime.now()-start
-			break
-		return [data[k] for k in data]
-
-	data={}
-	incremntalId=0
-	for obj in data_obj_list:
-		user=obj['customer_id']
-		if not user:
-			user='empty_'+str(incremntalId)
-			incremntalId+=1
-		if user not in data:
-			data[user]={}
-			for k in obj:
-				data[user][k]=set([obj[k]]) if obj[k] else set()
-		else:
-			for k in obj:
-				if obj[k]:
-					data[user][k].add(obj[k])
-	singleUser=[]
-	for k in data.keys():
-		if not data[k]['telephone'] and not data[k]['email']:
-			singleUser.append(data[k])
-			del data[k]
-	data=singleUser+customerResolution(data)
-	return [sorted(list(obj['configurable_sku'])) for obj in data if len(obj['configurable_sku'])>1]
-
-def aggregateByOrder(data_obj_list):
-	data=collections.defaultdict(set)
-	for obj in data_obj_list:
-		order=obj['order_id']
-		item=obj['configurable_sku']
-		data[order].add(item)
-	return [sorted(list(data[k])) for k in data if len(data[k])>1]
-
 def readCleanData(env):
 
 	def phoneNumberCleaner(s):
@@ -78,9 +23,64 @@ def readCleanData(env):
 			return data[-11:]
 		return None
 
-		
+	def aggregateByOrder(data_obj_list):
+		data=collections.defaultdict(set)
+		for obj in data_obj_list:
+			order=obj['order_id']
+			item=obj[env['aggregateFocus']]
+			data[order].add(item)
+		return [sorted(list(data[k])) for k in data if len(data[k])>1]
 
-	source_data=open(env['dataFilesPath']+env['dataFileName']['soureInputData'],'r').read().decode("utf-16").split('\n')
+	def aggregateByCustomer(data_obj_list):
+
+		def customerResolution(data):
+			num=0
+			start=datetime.now()
+			userNum=-1
+			while userNum!=len(data.keys()):
+				userNum=len(data.keys())
+				keys=data.keys()
+				total=len(keys)
+				for c in keys:
+					for k in data:
+						if c!=k and (data[c]['email']&data[k]['email'] or data[c]['telephone']&data[k]['telephone']):
+							data[k]['email']=data[k]['email']|data[c]['email']
+							data[k]['telephone']=data[k]['telephone']|data[c]['telephone']
+							data[k][env['aggregateFocus']]=data[k][env['aggregateFocus']]|data[c][env['aggregateFocus']]
+							del data[c]
+							break
+					num+=1
+					if num%2000==0:
+						print 'customer resolution:',str(int(num/float(total)*100))+'%',datetime.now()-start
+				break
+			return [data[k] for k in data]
+
+		data={}
+		incremntalId=0
+		for obj in data_obj_list:
+			user=obj['customer_id']
+			if not user:
+				user='empty_'+str(incremntalId)
+				incremntalId+=1
+			if user not in data:
+				data[user]={}
+				for k in obj:
+					data[user][k]=set([obj[k]]) if obj[k] else set()
+			else:
+				for k in obj:
+					if obj[k]:
+						data[user][k].add(obj[k])
+		singleUser=[]
+		for k in data.keys():
+			if not data[k]['telephone'] and not data[k]['email']:
+				singleUser.append(data[k])
+				del data[k]
+		data=singleUser+customerResolution(data)
+		return [sorted(list(obj[env['aggregateFocus']])) for obj in data if len(obj[env['aggregateFocus']])>1]
+
+
+
+	source_data=open(env['dataFilesPath']+env['soureInputData'],'r').read().decode("utf-16").split('\n')
 	header=source_data.pop(0).split('\t')
 	source_data.pop()
 	key_mapping={}
@@ -109,29 +109,25 @@ def readCleanData(env):
 	del source_data
 	print 'start aggregating testing set'
 	print 'total number of testing set:',len(dataSet['test'])
-	if env['aggregateMethod']=='cus':
+	if env['aggregateDimension']=='cus':
 		files=os.listdir(env['dataFilesPath'])
-		filePath=env['dataFilesPath']+'userProductMapping.json'
-		if 'userProductMapping.json' in files and (datetime.utcnow()-datetime.fromtimestamp(os.path.getctime(filePath))).total_seconds()<env['updatePeriod']*24*60*60:
+		filePath=env['dataFilesPath']+env['intermediateResult']
+		if env['intermediateResult'] in files:
+			print 'reading existing data, created at',os.path.getctime(filePath)
 			dataSet=json.loads(open(filePath).read())
-			print 'reading existing data'
 			getDataInfor(dataSet)
 		else:
-			filePath=env['dataFilesPath']+env['dataFileName']['soureInputData']
-			if 'userProductMapping.json' in files and (datetime.utcnow()-datetime.fromtimestamp(os.path.getctime(filePath))).total_seconds()>=env['updatePeriod']*24*60*60:
-				print 'Please update data.csv manually'
-				dataSet=None
-			else:	
-				for i in xrange(len(dataSet['test'])):
-					print 'start aggregating testing set '+str(i+1)
-					dataSet['test'][i]=aggregateByCustomer(dataSet['test'][i])
-				print 'start aggregating training set'
-				dataSet['train']=aggregateByCustomer(dataSet['train'])
-				getDataInfor(dataSet)
-				userProduct=open(env['dataFilesPath']+'userProductMapping.json','w')
-				userProduct.write(json.dumps(dataSet))
-				userProduct.close()
-	elif env['aggregateMethod']=='ord':
+			filePath=env['dataFilesPath']+env['soureInputData']
+			for i in xrange(len(dataSet['test'])):
+				print 'start aggregating testing set '+str(i+1)
+				dataSet['test'][i]=aggregateByCustomer(dataSet['test'][i])
+			print 'start aggregating training set'
+			dataSet['train']=aggregateByCustomer(dataSet['train'])
+			getDataInfor(dataSet)
+			userProduct=open(filePath,'w')
+			userProduct.write(json.dumps(dataSet))
+			userProduct.close()
+	elif env['aggregateDimension']=='ord':
 		for i in xrange(len(dataSet['test'])):
 			print 'start aggregating testing set '+str(i+1)
 			dataSet['test'][i]=aggregateByOrder(dataSet['test'][i])
