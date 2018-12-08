@@ -8,7 +8,7 @@ def findBasicRulesProductSet(env):
 	    try:
 	        print('Connecting to the PostgreSQL database...')
 	        conn = psycopg2.connect(**params)
-	        print('Connected...')
+	        print('Connected...\n')
 	        cur = conn.cursor()
 	        return cur
 	    except (Exception, psycopg2.DatabaseError) as error:
@@ -66,7 +66,7 @@ def findBasicRulesProductSet(env):
 		display_id = row[0]
 		hash(display_id)
 		row = cur.fetchone()
-	print len(exception),'exception'
+	print len(exception),'exception\n'
 	cur.execute('select display_id from display_unit')
 	print 'picking related product...'
 	row = cur.fetchone()

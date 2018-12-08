@@ -79,7 +79,7 @@ def readCleanData(env):
 		return [sorted(list(obj[env['aggregateFocus']])) for obj in data if len(obj[env['aggregateFocus']])>1]
 
 
-
+	print 'data aggregated by',env['aggregateDimension']
 	source_data=open(env['dataFilesPath']+env['soureInputData'],'r').read().decode("utf-16").split('\n')
 	header=source_data.pop(0).split('\t')
 	source_data.pop()
