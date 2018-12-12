@@ -117,7 +117,7 @@ def readCleanData(env):
 			dataSet=json.loads(open(filePath).read())
 			getDataInfor(dataSet)
 		else:
-			filePath=env['dataFilesPath']+env['soureInputData']
+			filePath=env['dataFilesPath']+env['intermediateResult']
 			for i in xrange(len(dataSet['test'])):
 				print 'start aggregating testing set '+str(i+1)
 				dataSet['test'][i]=aggregateByCustomer(dataSet['test'][i])
