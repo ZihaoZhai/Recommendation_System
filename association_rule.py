@@ -1,5 +1,6 @@
 def findFrequentPairs(data,paremeter):
 	print 'Using association rules to find frequent pairs'
+	data=[data[k] for k in data]
 	hashSingle={}
 	hashPair={}
 	hashResult={}

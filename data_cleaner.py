@@ -3,11 +3,12 @@ from datetime import datetime
 from random import random
 import os
 import json
+import time
 
 def getDataInfor(dataSet):
-	print 'tarinning set size:',len(dataSet['train'])
+	print 'tarinning set size:',len(dataSet['train'].keys())
 	for i in xrange(len(dataSet['test'])):
-		print 'testing set '+str(i+1)+' :',len(dataSet['test'][i])
+		print 'testing set '+str(i+1)+' :',len(dataSet['test'][i].keys())
 
 def readCleanData(env):
 
@@ -29,7 +30,12 @@ def readCleanData(env):
 			order=obj['order_id']
 			item=obj[env['aggregateFocus']]
 			data[order].add(item)
-		return [sorted(list(data[k])) for k in data if len(data[k])>1]
+		for k in data.keys():
+			if len(data[k])>1:
+				data[k]=sorted(data[k])
+			else:
+				del data[k]
+		return data
 
 	def aggregateByCustomer(data_obj_list):
 
@@ -46,6 +52,8 @@ def readCleanData(env):
 						if c!=k and (data[c]['email']&data[k]['email'] or data[c]['telephone']&data[k]['telephone']):
 							data[k]['email']=data[k]['email']|data[c]['email']
 							data[k]['telephone']=data[k]['telephone']|data[c]['telephone']
+							data[k]['customer_id']=data[k]['customer_id']|data[c]['customer_id']
+							data[k]['category']=data[k]['category']|data[c]['category']
 							data[k][env['aggregateFocus']]=data[k][env['aggregateFocus']]|data[c][env['aggregateFocus']]
 							del data[c]
 							break
@@ -53,7 +61,7 @@ def readCleanData(env):
 					if num%2000==0:
 						print 'customer resolution:',str(int(num/float(total)*100))+'%',datetime.now()-start
 				break
-			return [data[k] for k in data]
+			return data
 
 		data={}
 		incremntalId=0
@@ -70,19 +78,29 @@ def readCleanData(env):
 				for k in obj:
 					if obj[k]:
 						data[user][k].add(obj[k])
-		singleUser=[]
+		singleUser={}
 		for k in data.keys():
 			if not data[k]['telephone'] and not data[k]['email']:
-				singleUser.append(data[k])
+				singleUser[k]=data[k]
 				del data[k]
-		data=singleUser+customerResolution(data)
-		return [sorted(list(obj[env['aggregateFocus']])) for obj in data if len(obj[env['aggregateFocus']])>1]
+		resolution=customerResolution(data)
+		data=dict(singleUser.items()+resolution.items())
+		newData={}
+		for k in data:
+			if len(data[k][env['aggregateFocus']])>1:
+				newData[min(data[k]['customer_id'])]=sorted(data[k][env['aggregateFocus']])
+		return newData
+
+
 
 
 	print 'data aggregated by',env['aggregateDimension']
 	source_data=open(env['dataFilesPath']+env['soureInputData'],'r').read().decode("utf-16").split('\n')
 	header=source_data.pop(0).split('\t')
 	source_data.pop()
+
+	# source_data=source_data[:50000]
+
 	key_mapping={}
 	for i in xrange(len(header)):
 		key_mapping[i]=header[i]
@@ -113,7 +131,7 @@ def readCleanData(env):
 		files=os.listdir(env['dataFilesPath'])
 		filePath=env['dataFilesPath']+env['intermediateResult']
 		if env['intermediateResult'] in files:
-			print 'reading existing data, created at',os.path.getctime(filePath)
+			print 'reading existing data, created at',time.strftime("%Y/%m/%d %H:%M:%S", time.localtime(os.path.getctime(filePath)))
 			dataSet=json.loads(open(filePath).read())
 			getDataInfor(dataSet)
 		else:

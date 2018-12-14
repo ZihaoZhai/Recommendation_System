@@ -3,6 +3,7 @@ import json
 import data_cleaner
 import association_rule
 import basic_rules
+import collaborative_filtering
 
 env=json.loads(open('env.json').read())
 for k in env:
@@ -24,10 +25,11 @@ if env['algorithmMethod']=='BasicRules':
 	output.close()
 else:
 	data=data_cleaner.readCleanData(env['dataAggregateParameter'])
-	print '\n\n'
+	print '\n'
 	if env['algorithmMethod']=='AssociationRule':
 		frequentPairs=association_rule.findFrequentPairs(data['train'],env['associationRulesParemeter'])
 		for r in frequentPairs:
 			print r,frequentPairs[r][0]['relatedProduct']
 	elif env['algorithmMethod']=='CollaborativeFiltering':
-		pass
+		recommendProduct=collaborative_filtering.collaborativeFiltering(data['train'],env['collaborativeFilteringParameter'])
+		
