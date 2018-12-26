@@ -130,7 +130,7 @@ def readCleanData(env):
 	if env['aggregateDimension']=='cus':
 		files=os.listdir(env['dataFilesPath'])
 		filePath=env['dataFilesPath']+env['intermediateResult']
-		if env['intermediateResult'] in files:
+		if env['intermediateResult'] in files and env['aggregateFocus']=='configurable_sku':
 			print 'reading existing data, created at',time.strftime("%Y/%m/%d %H:%M:%S", time.localtime(os.path.getctime(filePath)))
 			dataSet=json.loads(open(filePath).read())
 			getDataInfor(dataSet)
