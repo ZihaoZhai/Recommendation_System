@@ -181,6 +181,9 @@ def add_filterStyle(filterStyle, style_dict):
     return res
 
 def main():
+    with open('env.json') as f:
+        env = json.loads(f.read())
+        
     cur = connect(env['basicRulesParameter']['PostgreSqlConnectParameter'])
     sql = "select price, color, simple_color, filterbrand, filterstyle from product \
        where category_path <> 'category/materials' or category_path is null"
@@ -217,6 +220,9 @@ def main():
         print('filterStyle : ', filterStyle)
         
         row = cur.fetchone()
+
+if __name__ == '__main__':
+    main()
 
 class Item :
     '''
