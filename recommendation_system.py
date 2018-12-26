@@ -11,7 +11,7 @@ for k in env:
 		env[k]=int(env[k]) if '.' not in str(env[k]) else float(env[k])
 print 'running', env['algorithmMethod']
 if env['algorithmMethod']=='BasicRules':
-	data=basic_rules.findBasicRulesProductSet(env['basicRulesParameter'])
+	data=basic_rules.findBasicRulesProductSet(env['basicRulesParameter'],env['PostgreSqlConnectParameter'])
 	output=open(env['dataAggregateParameter']['dataFilesPath']+env['basicRulesParameter']['rule']+'.json','w')
 	output.write(json.dumps(data))
 	output.close()

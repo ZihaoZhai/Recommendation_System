@@ -1,7 +1,7 @@
 import psycopg2
 import collections
 
-def findBasicRulesProductSet(env):
+def findBasicRulesProductSet(env,con):
 
 	def connect(params):
 	    conn = None
@@ -58,7 +58,7 @@ def findBasicRulesProductSet(env):
 			unMatched.add(display_id)
 			
 
-	cur=connect(env['PostgreSqlConnectParameter'])
+	cur=connect(con)
 	cur.execute('select configurable_sku from product')
 	print 'Calculating',env['rule']
 	row = cur.fetchone()

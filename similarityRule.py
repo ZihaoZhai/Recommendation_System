@@ -1,8 +1,6 @@
 import psycopg2
 import collections
 import json
-from tqdm import tqdm
-import pandas as pd
 import numpy as np
 
 def connect(params):
@@ -184,12 +182,12 @@ def main():
     with open('env.json') as f:
         env = json.loads(f.read())
         
-    cur = connect(env['basicRulesParameter']['PostgreSqlConnectParameter'])
+    cur = connect(env['PostgreSqlConnectParameter'])
     sql = "select price, color, simple_color, filterbrand, filterstyle from product \
        where category_path <> 'category/materials' or category_path is null"
     cur.execute(sql)
     row = cur.fetchone()
-
+    print row
     priceInterval = price_range(env, prices)
     simple_colors = fetch_simpleColors(cur)
     color_dict = simpleColor_dict(simple_colors)
