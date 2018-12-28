@@ -2,7 +2,7 @@ import collections
 import json
 
 def findFrequentPairs(data,paremeter):
-	print 'Using association rules to find frequent pairs...'
+	print ('Using association rules to find frequent pairs...')
 	data=[data[k] for k in data]
 	hashSingle={}
 	hashPair={}
@@ -29,5 +29,5 @@ def findFrequentPairs(data,paremeter):
 	output=open(paremeter['outPutFile'],'w')
 	output.write(json.dumps(hashResult))
 	output.close()
-	print 'Frequent Pairs Number:',len(hashResult.keys())
+	print ('Frequent Pairs Number:',len(hashResult.keys()))
 	return hashResult

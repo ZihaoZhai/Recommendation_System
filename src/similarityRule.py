@@ -57,7 +57,8 @@ class Item :
     def Cosine_similarity(self, vec1, vec2):
         vec1 = np.array(vec1)
         vec2 = np.array(vec2)
-        return 0 if sum(vec1) == 0 and sum(vec2) == 0 else float(vec1.dot(vec2)) / (sum(vec1) * sum(vec2))
+
+        return 0 if sum(vec1) == 0 or sum(vec2) == 0 else float(vec1.dot(vec2)) / (sum(vec1) * sum(vec2))
 
     def calculate_similarity(self, vec1, vec2):
         if self.env['similarityRulesParameter']['similarity_metric'] == 'cosine':
@@ -108,10 +109,10 @@ class Item :
 
 
     def similarity(self, item):
-        return 0.2 * self.price_similarity(item) if self.env['similarityRulesParameter']['usePrice'] else 0 + \
-               0.2 * self.color_similarity(item) if self.env['similarityRulesParameter']['useSimpleColor'] else 0 + \
-               0.2 * self.style_similarity(item) if self.env['similarityRulesParameter']['useFilterStyle'] else 0 + \
-               0.1 * self.category_similarity(item) if self.env['similarityRulesParameter']['useCategory'] else 0 + \
+        return 0.2 * self.price_similarity(item) + \
+               0.2 * self.color_similarity(item) + \
+               0.2 * self.style_similarity(item) + \
+               0.1 * self.category_similarity(item) + \
                0.3 * self.bra_similarity(item) + \
                0.3 * self.panty_similarity(item) + \
                0.3 * self.lingerie_similarity(item) + \
@@ -164,10 +165,10 @@ def get_similarity_dict(env):
             for j in range(i + 1, len(item_list)):
                 item2 = item_list[j]
                 similarity = item1.similarity(item2)
-                if similarity >= 0.5:
+                if similarity >= env['similarityRulesParameter']['similarity_threshold']:
                     item_similarity_dict[item1.configsku][item2.configsku] = similarity
                     item_similarity_dict[item2.configsku][item1.configsku] = similarity
-                #print(similarity)
+                    #print(similarity)
             #cnt += 1
             #if cnt >= 5:
             #    break
@@ -185,7 +186,7 @@ if __name__ == '__main__':
     with open('env.json') as f:
         env = json.loads(f.read())
     # main(env)
-    get_similarity_dict(env)
+    print(get_similarity_dict(env))
 
 
 

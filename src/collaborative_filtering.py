@@ -20,9 +20,9 @@ def collaborativeFiltering(data,env):
 		recommendProduct=collections.defaultdict(list)
 		key=data.keys()
 		start=datetime.now()
-		print 'Running user-base approach...'
-		print 'total user:',len(key)
-		print 'finding similar user and predicting...'
+		print ( 'Running user-base approach...')
+		print ( 'total user:',len(key))
+		print ( 'finding similar user and predicting...')
 		count=0
 		for i in xrange(len(key)):
 			for j in xrange(i+1,len(key)):
@@ -51,16 +51,16 @@ def collaborativeFiltering(data,env):
 					del candidateProduct[k1]
 			count+=1
 			if count%1000==0:
-				print int(count/float(len(key))*100),'%','finished',datetime.now()-start
+				print ( int(count/float(len(key))*100),'%','finished',datetime.now()-start)
 		return recommendProduct
 
 	def itemBase(data):
 		key=data.keys()
 		count=0
 		start=datetime.now()
-		print 'Running items-base approach...'
-		print 'total product:',len(key)
-		print 'finding similar product...'
+		print ( 'Running items-base approach...' )
+		print ( 'total product:',len(key))
+		print ( 'finding similar product...')
 		relatedData=collections.defaultdict(dict)
 		for i in xrange(len(key)):
 			for j in xrange(i+1,len(key)):
@@ -72,7 +72,7 @@ def collaborativeFiltering(data,env):
 					relatedData[k2][k1]=simi
 			count+=1
 			if count%500==0:
-				print int(count/float(len(key))*100),'%','finished',datetime.now()-start
+				print ( int(count/float(len(key))*100),'%','finished',datetime.now()-start)
 		return relatedData
 
 
@@ -84,7 +84,7 @@ def collaborativeFiltering(data,env):
 		output.close()
 	elif env["method"]=='ItemBase':
 		result=itemBase(productUserMapping)
-		print result
+		print ( result )
 		output=open('../Data/recommendProduct_itemBase.json','w')
 		output.write(json.dumps(result))
 		output.close()

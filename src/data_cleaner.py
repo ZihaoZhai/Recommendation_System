@@ -6,9 +6,9 @@ import json
 import time
 
 def getDataInfor(dataSet):
-	print 'tarinning set size:',len(dataSet['train'].keys())
+	print ('tarinning set size:',len(dataSet['train'].keys()))
 	for i in xrange(len(dataSet['test'])):
-		print 'testing set '+str(i+1)+' :',len(dataSet['test'][i].keys())
+		print ('testing set '+str(i+1)+' :',len(dataSet['test'][i].keys()))
 
 def readCleanData(env):
 
@@ -59,7 +59,7 @@ def readCleanData(env):
 							break
 					num+=1
 					if num%2000==0:
-						print 'customer resolution:',str(int(num/float(total)*100))+'%',datetime.now()-start
+						print ('customer resolution:',str(int(num/float(total)*100))+'%',datetime.now()-start)
 				break
 			return data
 
@@ -94,7 +94,7 @@ def readCleanData(env):
 
 
 
-	print 'data aggregated by',env['aggregateDimension']
+	print ('data aggregated by',env['aggregateDimension'])
 	source_data=open(env['dataFilesPath']+env['soureInputData'],'r').read().decode("utf-16").split('\n')
 	header=source_data.pop(0).split('\t')
 	source_data.pop()
@@ -125,21 +125,21 @@ def readCleanData(env):
 		else:
 			dataSet['train'].append(obj)
 	del source_data
-	print 'start aggregating testing set'
-	print 'total number of testing set:',len(dataSet['test'])
+	print ('start aggregating testing set')
+	print ('total number of testing set:',len(dataSet['test']))
 	if env['aggregateDimension']=='cus':
 		files=os.listdir(env['dataFilesPath'])
 		filePath=env['dataFilesPath']+env['intermediateResult']
 		if env['intermediateResult'] in files and env['aggregateFocus']=='configurable_sku':
-			print 'reading existing data, created at',time.strftime("%Y/%m/%d %H:%M:%S", time.localtime(os.path.getctime(filePath)))
+			print ('reading existing data, created at',time.strftime("%Y/%m/%d %H:%M:%S", time.localtime(os.path.getctime(filePath))))
 			dataSet=json.loads(open(filePath).read())
 			getDataInfor(dataSet)
 		else:
 			filePath=env['dataFilesPath']+env['intermediateResult']
 			for i in xrange(len(dataSet['test'])):
-				print 'start aggregating testing set '+str(i+1)
+				print ('start aggregating testing set '+str(i+1))
 				dataSet['test'][i]=aggregateByCustomer(dataSet['test'][i])
-			print 'start aggregating training set'
+			print ('start aggregating training set')
 			dataSet['train']=aggregateByCustomer(dataSet['train'])
 			getDataInfor(dataSet)
 			userProduct=open(filePath,'w')
@@ -147,9 +147,9 @@ def readCleanData(env):
 			userProduct.close()
 	elif env['aggregateDimension']=='ord':
 		for i in xrange(len(dataSet['test'])):
-			print 'start aggregating testing set '+str(i+1)
+			print ('start aggregating testing set '+str(i+1))
 			dataSet['test'][i]=aggregateByOrder(dataSet['test'][i])
-		print 'start aggregating training set'
+		print ('start aggregating training set')
 		dataSet['train']=aggregateByOrder(dataSet['train'])
 		getDataInfor(dataSet)
 	return dataSet

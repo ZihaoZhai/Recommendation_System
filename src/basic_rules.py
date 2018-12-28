@@ -60,21 +60,21 @@ def findBasicRulesProductSet(env,con):
 
 	cur=connect(con)
 	cur.execute('select configurable_sku from product')
-	print 'Calculating',env['rule']
+	print ('Calculating',env['rule'])
 	row = cur.fetchone()
 	hashMap,exception,result,unMatched=collections.defaultdict(set),set(),collections.defaultdict(set),set()
-	print 'hashing all product...'
+	print ('hashing all product...')
 	while row:
 		display_id = row[0]
 		hash(display_id)
 		row = cur.fetchone()
-	print len(exception),'exception\n'
+	print (len(exception),'exception\n')
 	cur.execute('select display_id from display_unit')
-	print 'picking related product...'
+	print ('picking related product...')
 	row = cur.fetchone()
 	while row:
 		display_id=row[0]
 		pick(display_id)
 		row=cur.fetchone()
-	print len(unMatched),'unmatched'
+	print (len(unMatched),'unmatched')
 	return result
