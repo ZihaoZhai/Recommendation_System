@@ -150,7 +150,7 @@ def get_similarity_dict(env):
             for j in range(i + 1, len(item_list)):
                 item2 = item_list[j]
                 similarity = item1.similarity(item2)
-                if similarity >= 0.4:
+                if similarity >= 0.5:
                     item_similarity_dict[item1.configsku][item2.configsku] = similarity
                     item_similarity_dict[item2.configsku][item1.configsku] = similarity
                 #print(similarity)
