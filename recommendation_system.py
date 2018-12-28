@@ -15,6 +15,11 @@ if env['algorithmMethod']=='BasicRules':
 	output=open(env['dataAggregateParameter']['dataFilesPath']+env['basicRulesParameter']['rule']+'.json','w')
 	output.write(json.dumps(data))
 	output.close()
+elif env['algorithmMethod']=='SimilarityRule':
+	#todo
+	pass
+	
+
 else:
 	data=data_cleaner.readCleanData(env['dataAggregateParameter'])
 	print '\n'
