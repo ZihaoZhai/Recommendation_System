@@ -51,8 +51,15 @@ class Item :
     def Jacard_similarity(self, vec1, vec2):
         if vec1 is None or vec2 is None or len(vec1) != len(vec2):
             return 0
-        return float(sum([i for i in range(len(vec1)) if vec1[i] == vec2[i] and vec1[1] == 1])) / \
-               sum([i for i in range(len(vec1)) if vec1[i] == 1 or vec2[1] == 1])
+        denominator = 0
+        for i in range(len(vec1)):
+            if vec1[i] == 1 and vec2[i] == 1:
+                denominator += 2
+            elif vec1[i] == 1 or vec2[i] == 1
+                denominator += 1
+        if denominator == 0:
+            return 0
+        return float(sum([1 for i in range(len(vec1)) if vec1[i] == vec2[i] and vec1[1] == 1])) / denominator
 
     def Cosine_similarity(self, vec1, vec2):
         vec1 = np.array(vec1)
