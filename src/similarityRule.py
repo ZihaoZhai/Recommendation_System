@@ -20,6 +20,9 @@ class Item :
                       12bra_closure, 13bra_shape, 14bra_seam, 15bra_back_style, \
                       16bra_smooth_level,\
                       17panty_style, 18panty_cut, 19panty_smooth_level,\
+                      20lingerie_product_type, 21clothing_by_function, 22sleeve_length,\
+                      23pant_length, 24dress_length, 25dress_knee_length, 26collar_shape, \
+                      27beauty_type, 28makeup_product_type, 29skincare_product_type, \
                       from product\
                where category_path <> 'category/materials' or category_path is null"
     '''
@@ -97,14 +100,22 @@ class Item :
     def panty_similarity(self, item):
         return self.subfield_similarity(item, 17, 20)
 
+    def lingerie_similarity(self, item):
+        return self.subfield_similarity(item, 20, 27)
+
+    def beauty_similarity(self, item):
+        return self.subfield_similarity(item, 27, 30)
+
 
     def similarity(self, item):
-        return 0.2 * self.price_similarity(item) + \
-               0.2 * self.color_similarity(item) + \
-               0.2 * self.style_similarity(item) + \
-               0.1 * self.category_similarity(item) + \
+        return 0.2 * self.price_similarity(item) if self.env['similarityRulesParameter']['usePrice'] else 0 + \
+               0.2 * self.color_similarity(item) if self.env['similarityRulesParameter']['useSimpleColor'] else 0 + \
+               0.2 * self.style_similarity(item) if self.env['similarityRulesParameter']['useFilterStyle'] else 0 + \
+               0.1 * self.category_similarity(item) if self.env['similarityRulesParameter']['useCategory'] else 0 + \
                0.3 * self.bra_similarity(item) + \
-               0.3 * self.panty_similarity(item)
+               0.3 * self.panty_similarity(item) + \
+               0.3 * self.lingerie_similarity(item) + \
+               0.5 * self.beauty_similarity(item)
 
 
 def get_similarity_dict(env):
@@ -112,22 +123,25 @@ def get_similarity_dict(env):
     try:
         conn = connect(env['PostgreSqlConnectParameter'])
         cur = conn.cursor()
-        sql = "select price, filterstyle, category_path, configurable_sku, \
-                      bra_type, bra_by_function, bra_padding_level, bra_padding_style, \
-                      bra_wire_style, bra_strap, bra_wear_style, bra_neck_style, \
-                      bra_closure, bra_shape, bra_seam, bra_back_style, \
-                      bra_smooth_level,\
-                      panty_style, panty_cut, panty_smooth_level\
-                      from product\
-               where category_path <> 'category/materials' or category_path is null"
+        sql = " select price, filterstyle, category_path, configurable_sku, \
+                       bra_type, bra_by_function, bra_padding_level, bra_padding_style, \
+                       bra_wire_style, bra_strap, bra_wear_style, bra_neck_style, \
+                       bra_closure, bra_shape, bra_seam, bra_back_style, \
+                       bra_smooth_level, \
+                       panty_style, panty_cut, panty_smooth_level, \
+                       lingerie_product_type, clothing_by_function, sleeve_length, \
+                       pant_length, dress_length, dress_knee_length, collar_shape, \
+                       beauty_type, makeup_product_type, skincare_product_type \
+                from product\
+                where category_path <> 'category/materials' or category_path is null"
         cur.execute(sql)
         item_list = []
         visited = set()
         row = cur.fetchone()
-        priceInterval = price_range(env)
-        style_dict = fetch_filterStyle(env)
-        sku_color_dict = configsku_color_dict(env)
-        sku_category_dict = configsku_category_dict(env)
+        priceInterval = price_range(env) # transform price into ranges feature
+        style_dict = fetch_filterStyle(env) # get {filterStyle : uniqId} dictionary
+        sku_color_dict = configsku_color_dict(env) # get {configsku : color_set} dctionary
+        sku_category_dict = configsku_category_dict(env) # get {configsku : category} dctionary
         while row:
             #price = float(row[0])
             #color_code = row[1]
@@ -144,7 +158,7 @@ def get_similarity_dict(env):
         
         item_similarity_dict = defaultdict(dict)
         #cnt = 0
-        print(len(item_list))
+        #print(len(item_list))
         for i in tqdm(range(len(item_list))):
             item1 = item_list[i]
             for j in range(i + 1, len(item_list)):
@@ -159,11 +173,7 @@ def get_similarity_dict(env):
             #    break
         item_similarity_dict = dict(item_similarity_dict)
         print(item_similarity_dict)
-        with open('similarity_recommendation_total.txt', 'w') as f:
-            for key in item_similarity_dict.keys():
-                f.write(key + " : ")
-                f.write(str(item_similarity_dict[key]) + "\n")
-        return dict(item_similarity_dict)
+        return item_similarity_dict
 
     finally:
         print("close connection...")
